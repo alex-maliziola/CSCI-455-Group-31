@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joystick and Sliders</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #joystick-container {
+      width: 200px;
+      height: 200px;
+      background-color: #eee;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #joystick {
+      width: 50px;
+      height: 50px;
+      background-color: #ccc;
+      border-radius: 50%;
+      cursor: pointer;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .slider-container {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .slider {
+      width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <div id="joystick-container">
+    <div id="joystick"></div>
+  </div>
+  <div class="slider-container">
+    <label for="head-tilt">Head Tilt:</label>
+    <input type="range" min="-5" max="5" value="0" class="slider" id="head-tilt">
+  </div>
+  <div class="slider-container">
+    <label for="head-pan">Head Pan:</label>
+    <input type="range" min="-5" max="5" value="0" class="slider" id="head-pan">
+  </div>
+  <div class="slider-container">
+    <label for="waist-pan">Waist Pan:</label>
+    <input type="range" min="-5" max="5" value="0" class="slider" id="waist-pan">
+  </div>
+
+  <script>
+  // Function to send control information to the Raspberry Pi backend server
+  // Control responses are head_tilt, head_pan, waist_pan, and Joystick.
+  // The first three send -5 to 5 values, with 0 being center. 
+  // Joystick sends x/y coordinates ranging from 25 to 175, with 100 being center.
+  function sendControlInfo(control, value) {
+    console.log("Sending control: " + control + ", Value: " + value);
+    var url = 'http://192.168.43.12:5000/control';  // Update with your Raspberry Pi's IP
+    var data = { control: control, value: value };
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log(data.message);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+// Function to reset joystick position to the center
+function resetJoystickPosition() {
+  var joystick = document.getElementById("joystick");
+  var containerRect = joystick.parentElement.getBoundingClientRect();
+
+  // Reset to the center
+  joystick.style.left = "50%";
+  joystick.style.top = "50%";
+
+  // Log the centered position
+  var centerX = containerRect.width / 2;
+  var centerY = containerRect.height / 2;
+
+  // Send centered position to the backend server
+  sendControlInfo("Joystick", centerX + "," + centerY);
+}
+
+// Function to handle joystick movement
+function handleJoystickMove(event) {
+  // Calculate joystick position relative to its container
+  var joystick = document.getElementById("joystick");
+  var containerRect = joystick.parentElement.getBoundingClientRect();
+  var posX = event.clientX - containerRect.left;
+  var posY = event.clientY - containerRect.top;
+
+  // Limit joystick movement within its container (circular boundary)
+  var radius = containerRect.width / 2 - joystick.clientWidth / 2;
+  var distanceX = posX - containerRect.width / 2;
+  var distanceY = posY - containerRect.height / 2;
+  var distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+  if (distance > radius) {
+    // Calculate angle and set position at the edge of the circle
+    var angle = Math.atan2(distanceY, distanceX);
+    posX = Math.cos(angle) * radius + containerRect.width / 2;
+    posY = Math.sin(angle) * radius + containerRect.height / 2;
+  }
+
+  joystick.style.left = posX + "px";
+  joystick.style.top = posY + "px";
+
+  // Format the coordinates as a string "x,y" and send to the backend server
+  sendControlInfo("Joystick", posX + "," + posY);
+}
+
+// Add mouse event listeners to the joystick
+var joystick = document.getElementById("joystick");
+joystick.addEventListener("mousedown", function(event) {
+  // Start dragging the joystick
+  document.addEventListener("mousemove", handleJoystickMove);
+});
+document.addEventListener("mouseup", function(event) {
+  // Stop dragging the joystick and reset its position
+  document.removeEventListener("mousemove", handleJoystickMove);
+  resetJoystickPosition();
+});
+
+    // Function to handle slider changes
+    function handleSliderChange(event) {
+      var slider = event.target;
+      var value = slider.value;
+      var control = slider.id;
+      sendControlInfo(control, value);
+    }
+
+    // Add change event listeners to sliders
+    var sliders = document.querySelectorAll(".slider");
+    sliders.forEach(function(slider) {
+      slider.addEventListener("input", handleSliderChange);
+    });
+  </script>
+</body>
+</html>
