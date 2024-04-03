@@ -1,0 +1,32 @@
+~greetings: [hello howdy "hi there"]
+~filthy: [ew stop "stop it" "stop it now"]
+~error: [error oopsie wowee]:wew
+u:(~greetings):[hi hello "what up" sup]
+	u1:(cat):a feline!
+		u2:(dog):a canine!
+	u1:[one two "three four"]:these numbers are within a greeting!
+		u2:(you):this is now working
+		u2:(and):[one two]
+	u1:(you):good
+u:(you):Should not be here
+	u1:(~greetings):haha wow
+u:(test):two
+    u1:(third):~greetings
+u:(I):spy
+	u1:(with):["my little eye" "my little spy" "my little spry"]
+u:(my name is _): hello $name
+	u1:(I am _ years old):You are $age years old
+	u1:(do you remember my name) : Yes
+		u2:["i dont" "help" wow] : You are a fool
+		u2:(what is it):$name
+			u3:(you are very smart):I know
+	u1:(cat):a kitty!
+		u2:(dog):a puppy!
+u:(what is my name) : your name is $name
+	u1:(~filthy):what's the problem dude, calm down.
+u: (how old am I) : you are $age
+	u:(would you date me) : ~filthy
+u:[one two "three four"]:these are numbers!
+u:(cat):MEOW
+	u1:(dog):WOOF
+u:(this is an error) error here
